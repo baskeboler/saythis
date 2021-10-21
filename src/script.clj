@@ -7,6 +7,7 @@
   ;; An option with a required argument
   [["-t" "--text TEXT" "The text to read aloud"
     :default "Hello World"]
+   ["-f" "--file PATH" "Input file with text"]
    ["-v" "--voice NAME" "The voice to render speach with"
     :default "es-LA_SofiaV3Voice"]
    ["-l" "--lang LANG" "The language"
@@ -123,15 +124,6 @@
                   :allison "en-US_AllisonV3Voice"}
              :es {:sofia "es-LA_SofiaV3Voice"
                   :laura "es-ES_LauraV3Voice"}})
-#_(def resp  (curl/get talk-endpoint
-                     {:as           :stream
-                      :headers      {"Connection" "keep-alive"
-                                     "Accept"     "*/*"}
-                      :query-params {"text"     (apply str *command-line-args*)
-                                     "voice"    (get-in voices [:es :sofia])
-                                     "download" "true"
-                                     "accept"   "audio/ogg;codec=opus"}}))
-
 
 (defn download-speech
   [text voice]
@@ -146,12 +138,23 @@
       :body
       (io/copy (io/file output-file))))
 
-
 (defn -main []
-  (download-speech (apply str *command-line-args*)
-                   (get-in voices [:es :sofia]))
-  (shell/sh "play" output-file)
-  (println "file size: " (.length (io/file output-file)))
-  (println (:summary (parse-opts *command-line-args* cli-options))))
+  (let [{:keys [options arguments summary errors]
+         :as   opts} (parse-opts *command-line-args* cli-options)
+        {:keys [text  voice lang file help]} options
+        text (if (some? arguments) (apply str arguments) text)]
+    (cond
+      (or errors (some? help)) (do
+                                 (println summary)
+                                 (System/exit 1))
+      (some? file)
+      (let [text (slurp file)]
+        (download-speech text
+                         voice))
+      :else
+      (download-speech text
+                       voice))
+    (shell/sh "play" output-file)
+    nil))
 
 (-main)
