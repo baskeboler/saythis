@@ -1,7 +1,6 @@
 #!/usr/bin/env bb
 
 (require '[babashka.curl :as curl]
-         '[clojure.string :as cstr]
          '[clojure.tools.cli :refer [parse-opts]])
 
 (def cli-options
@@ -148,19 +147,11 @@
       (io/copy (io/file output-file))))
 
 
-#_(io/copy body (io/file output-file))
 (defn -main []
-
   (download-speech (apply str *command-line-args*)
                    (get-in voices [:es :sofia]))
-
-
   (shell/sh "play" output-file)
-
-
   (println "file size: " (.length (io/file output-file)))
-
   (println (:summary (parse-opts *command-line-args* cli-options))))
 
-; hash tries implementation
 (-main)
