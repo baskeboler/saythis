@@ -1,0 +1,12 @@
+{:paths ["src"]
+ :tasks
+ {:requires ([babashka.fs :as fs])
+
+  clean (do
+          (println "Removing target folder.")
+          (fs/delete-tree "target"))
+  uberjar (do
+            (println "Making uberjar")
+            (clojure "-X:uberjar"))
+  uberjar:clean (do (run 'clean)
+                    (run 'uberjar))}}
